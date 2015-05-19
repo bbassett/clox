@@ -41,6 +41,12 @@ defmodule Clox do
 
   @date_format "{ISOz}"
 
+  @doc """
+  Get a list of keys for a time. The returned keys are split into buckets
+  based on the granularities (minute, ten minute, hour, day, week, month).
+
+  These keys may be used to save a counter for a metric
+  """
   def keys_for_time(time \\ Date.now) do
     time = time
     |> parse
@@ -55,16 +61,25 @@ defmodule Clox do
     {:ok, keys}
   end
 
-  def decode(time, _env \\ "prod") do
+  @doc """
+  Format a key into a format, defaulting to ISOz
+  """
+  def format(time, format \\ @date_format, _env \\ "prod") do
     {:ok, time
     |> parse
-    |> DateFormat.format!(@date_format)}
+    |> DateFormat.format!(format)}
   end
 
+  @doc """
+  Get a list of granularities supported.
+  """
   def granularities(_env \\ "prod") do
     {:ok, @granularities}
   end
 
+  @doc """
+  Get a range of keys between two dates. The granularity will be derived based on steps.
+  """
   def smart_range(begining, ending, steps \\ 20, env \\ "prod")
   def smart_range(begining, ending, steps, env) when is_binary(begining) do
     smart_range(DateFormat.parse!(begining, @date_format), ending, steps, env)
@@ -87,6 +102,9 @@ defmodule Clox do
     unquote(List.last(@granularities))
   end
 
+  @doc """
+  Get a range of keys given a granularity.
+  """
   def range(begining, ending, granularity, env \\ "prod")
   def range(begining, ending, granularity, env) when is_binary(begining) do
     range(DateFormat.parse!(begining, @date_format), ending, granularity, env)
@@ -115,9 +133,12 @@ defmodule Clox do
     :lists.reverse(acc)
   end
 
-  def is_frozen(time, now \\ Date.now, env \\ "prod")
+  @doc """
+  Determine if the key is frozen.
+  """
+  def is_frozen?(time, now \\ Date.now, env \\ "prod")
   for prefix <- @granularities do
-    def is_frozen(<<unquote(prefix), time :: binary>>, now, _env) do
+    def is_frozen?(<<unquote(prefix), time :: binary>>, now, _env) do
       {:ok, truncate(now, unquote(prefix)) > unpack(time)}
     end
   end
@@ -201,7 +222,7 @@ defmodule Clox do
     else
       ""
     end
-    def pad(buf) when rem(byte_size(buf), 4) == unquote(size) do
+    defp pad(buf) when rem(byte_size(buf), 4) == unquote(size) do
       buf <> unquote(padding)
     end
   end
