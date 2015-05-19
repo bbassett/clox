@@ -64,7 +64,7 @@ defmodule Clox do
   @doc """
   Format a key into a format, defaulting to ISOz
   """
-  def format(time, format \\ @date_format, _env \\ "prod") do
+  def format(time, format \\ @date_format) do
     {:ok, time
     |> parse
     |> DateFormat.format!(format)}
@@ -73,24 +73,24 @@ defmodule Clox do
   @doc """
   Get a list of granularities supported.
   """
-  def granularities(_env \\ "prod") do
+  def granularities do
     {:ok, @granularities}
   end
 
   @doc """
   Get a range of keys between two dates. The granularity will be derived based on steps.
   """
-  def smart_range(begining, ending, steps \\ 20, env \\ "prod")
-  def smart_range(begining, ending, steps, env) when is_binary(begining) do
-    smart_range(DateFormat.parse!(begining, @date_format), ending, steps, env)
+  def smart_range(begining, ending, steps \\ 20)
+  def smart_range(begining, ending, steps) when is_binary(begining) do
+    smart_range(DateFormat.parse!(begining, @date_format), ending, steps)
   end
-  def smart_range(begining, ending, steps, env) when is_binary(ending) do
-    smart_range(begining, DateFormat.parse!(ending, @date_format), steps, env)
+  def smart_range(begining, ending, steps) when is_binary(ending) do
+    smart_range(begining, DateFormat.parse!(ending, @date_format), steps)
   end
-  def smart_range(begining, ending, steps, env) do
+  def smart_range(begining, ending, steps) do
     diff = Date.diff(begining, ending, :mins)
     granularity = diff_to_granularity(diff, steps)
-    range(begining, ending, granularity, env)
+    range(begining, ending, granularity)
   end
 
   for {granularity, resolution} <- @resolutions do
@@ -105,15 +105,15 @@ defmodule Clox do
   @doc """
   Get a range of keys given a granularity.
   """
-  def range(begining, ending, granularity, env \\ "prod")
-  def range(begining, ending, granularity, env) when is_binary(begining) do
-    range(DateFormat.parse!(begining, @date_format), ending, granularity, env)
+  def range(begining, ending, granularity)
+  def range(begining, ending, granularity) when is_binary(begining) do
+    range(DateFormat.parse!(begining, @date_format), ending, granularity)
   end
-  def range(begining, ending, granularity, env) when is_binary(ending) do
-    range(begining, DateFormat.parse!(ending, @date_format), granularity, env)
+  def range(begining, ending, granularity) when is_binary(ending) do
+    range(begining, DateFormat.parse!(ending, @date_format), granularity)
   end
   for {granularity, resolution} <- @resolutions do
-    def range(begining, ending, unquote(granularity), _env) do
+    def range(begining, ending, unquote(granularity)) do
       ending = ending
       |> truncate(unquote(granularity))
       |> + unquote(resolution)
@@ -136,9 +136,9 @@ defmodule Clox do
   @doc """
   Determine if the key is frozen.
   """
-  def is_frozen?(time, now \\ Date.now, env \\ "prod")
+  def is_frozen?(time, now \\ Date.now)
   for prefix <- @granularities do
-    def is_frozen?(<<unquote(prefix), time :: binary>>, now, _env) do
+    def is_frozen?(<<unquote(prefix), time :: binary>>, now) do
       {:ok, truncate(now, unquote(prefix)) > unpack(time)}
     end
   end
