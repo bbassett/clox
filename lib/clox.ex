@@ -155,6 +155,9 @@ defmodule Clox do
       |> Date.from(:secs)
     end
   end
+  defp parse(time) when is_binary(time) do
+    DateFormat.parse!(time, @date_format)
+  end
 
   defp truncate(time, @minute_prefix) do
     time
