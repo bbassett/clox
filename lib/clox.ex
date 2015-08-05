@@ -126,11 +126,13 @@ defmodule Clox do
   end
 
   defp iter(begining, ending, granularity, resolution, acc) when begining <= ending do
-    key = granularity <> pack(begining)
+    key = granularity <> pack(truncate(begining, granularity))
     iter(begining + resolution, ending, granularity, resolution, [key | acc])
   end
   defp iter(_, _, _, _, acc) do
-    :lists.reverse(acc)
+    acc
+    |> Enum.uniq
+    |> :lists.reverse
   end
 
   @doc """
@@ -157,6 +159,13 @@ defmodule Clox do
   end
   defp parse(time) when is_binary(time) do
     DateFormat.parse!(time, @date_format)
+  end
+
+  defp truncate(minutes, granularity) when is_integer(minutes) do
+    minutes
+    |> from_minutes
+    |> Date.from(:secs)
+    |> truncate(granularity)
   end
 
   defp truncate(time, @minute_prefix) do
