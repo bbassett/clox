@@ -3,7 +3,7 @@ defmodule Clox.Mixfile do
 
   def project do
     [app: :clox,
-     version: "0.1.2",
+     version: "0.1.3",
      elixir: "~> 1.0",
      description: "time series date keys",
      build_embedded: Mix.env == :prod,
