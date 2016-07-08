@@ -4,13 +4,13 @@ defmodule CloxTest do
 
   def time do
     bind int(1_000_000_000, 2_000_000_000), fn(ts) ->
-      Timex.Date.from(ts, :secs)
+      Timex.DateTime.from_seconds(ts)
     end
   end
 
   def range do
     bind {time, int(0, 1_000_000)}, fn({time, inc}) ->
-      {time, Timex.Date.shift(time, [secs: inc])}
+      {time, Timex.DateTime.shift(time, [seconds: inc])}
     end
   end
 
