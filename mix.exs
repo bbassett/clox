@@ -3,8 +3,8 @@ defmodule Clox.Mixfile do
 
   def project do
     [app: :clox,
-     version: "0.1.3",
-     elixir: "~> 1.0",
+     version: "0.2.0",
+     elixir: "~> 1.3",
      description: "time series date keys",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
@@ -13,12 +13,12 @@ defmodule Clox.Mixfile do
   end
 
   def application do
-    [applications: [:logger]]
+    [applications: [:logger, :tzdata]]
   end
 
   defp deps do
-    [{ :timex, "~> 0.13.4" },
-     { :excheck, "~> 0.2.3", only: [:dev, :test] },
+    [{ :timex, "~> 2.2.1" },
+     { :excheck, "~> 0.4.0", only: [:dev, :test] },
      { :triq, github: "krestenkrab/triq", only: [:dev, :test] }]
   end
 
