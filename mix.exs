@@ -19,12 +19,13 @@ defmodule Clox.Mixfile do
   defp deps do
     [{ :timex, "~> 2.2.1" },
      { :excheck, "~> 0.4.0", only: [:dev, :test] },
-     { :triq, github: "krestenkrab/triq", only: [:dev, :test] }]
+     { :triq, github: "krestenkrab/triq", only: [:dev, :test] },
+     { :ex_doc, ">= 0.0.0", only: :dev }]
   end
 
   defp package do
     [files: ["lib", "mix.exs", "README*"],
-     contributors: ["Cameron Bytheway"],
+     maintainers: ["Cameron Bytheway"],
      licenses: ["MIT"],
      links: %{"GitHub" => "https://github.com/camshaft/clox"}]
   end
