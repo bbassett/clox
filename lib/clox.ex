@@ -1,6 +1,7 @@
 defmodule Clox do
-  
-  alias Timex.DateTime
+
+  alias Timex.Date
+  alias Timex.DateFormat
 
   @minute_prefix "m"
   @ten_minute_prefix "T"
@@ -36,7 +37,7 @@ defmodule Clox do
     {@month_prefix, @month_res}
   ]
 
-  @epoch 0
+  @epoch {1970,1,1} |> Date.from() |> Date.to_secs()
 
   @date_format "{ISOz}"
 
@@ -46,10 +47,10 @@ defmodule Clox do
 
   These keys may be used to save a counter for a metric
   """
-  def keys_for_time(time \\ DateTime.now) do
+  def keys_for_time(time \\ Date.now) do
     time = time
-    |> parse
-    |> DateTime.set([second: 0])
+    |> parse()
+    |> Date.set([second: 0, ms: 0])
 
     keys = unquote(for granularity <- @granularities do
       quote do
@@ -65,8 +66,9 @@ defmodule Clox do
   """
   def format(time, format \\ @date_format) do
     {:ok, time
-    |> parse
-    |> Timex.format!(format)}
+      |> parse()
+      |> DateFormat.format!(format)
+    }
   end
 
   @doc """
@@ -81,13 +83,13 @@ defmodule Clox do
   """
   def smart_range(begining, ending, steps \\ 20)
   def smart_range(begining, ending, steps) when is_binary(begining) do
-    smart_range(Timex.parse!(begining, @date_format), ending, steps)
+    smart_range(DateFormat.parse!(begining, @date_format), ending, steps)
   end
   def smart_range(begining, ending, steps) when is_binary(ending) do
-    smart_range(begining, Timex.parse!(ending, @date_format), steps)
+    smart_range(begining, DateFormat.parse!(ending, @date_format), steps)
   end
   def smart_range(begining, ending, steps) do
-    diff = DateTime.diff(begining, ending, :minutes)
+    diff = Date.diff(begining, ending, :mins)
     granularity = diff_to_granularity(diff, steps)
     range(begining, ending, granularity)
   end
@@ -106,10 +108,10 @@ defmodule Clox do
   """
   def range(begining, ending, granularity)
   def range(begining, ending, granularity) when is_binary(begining) do
-    range(Timex.parse!(begining, @date_format), ending, granularity)
+    range(DateFormat.parse!(begining, @date_format), ending, granularity)
   end
   def range(begining, ending, granularity) when is_binary(ending) do
-    range(begining, Timex.parse!(ending, @date_format), granularity)
+    range(begining, DateFormat.parse!(ending, @date_format), granularity)
   end
   for {granularity, resolution} <- @resolutions do
     def range(begining, ending, unquote(granularity)) do
@@ -130,79 +132,79 @@ defmodule Clox do
   end
   defp iter(_, _, _, _, acc) do
     acc
-    |> Enum.uniq
-    |> :lists.reverse
+    |> Enum.uniq()
+    |> :lists.reverse()
   end
 
   @doc """
   Determine if the key is frozen.
   """
-  def is_frozen?(time, now \\ DateTime.now)
+  def is_frozen?(time, now \\ Date.now)
   for prefix <- @granularities do
     def is_frozen?(<<unquote(prefix), time :: binary>>, now) do
       {:ok, truncate(now, unquote(prefix)) > unpack(time)}
     end
   end
 
-  defp parse(nil), do: DateTime.now
-  defp parse(""), do: DateTime.now
-  defp parse(time) when is_integer(time), do: DateTime.from_seconds(time)
+  defp parse(nil), do: Date.now
+  defp parse(""), do: Date.now
+  defp parse(time) when is_integer(time), do: Date.from(time, :secs)
   defp parse(time = %Timex.DateTime{}), do: time
   for prefix <- @granularities do
     defp parse(<<unquote(prefix), time :: binary>>) do
       time
-      |> unpack
-      |> from_minutes
-      |> DateTime.from_seconds
+      |> unpack()
+      |> from_minutes()
+      |> Date.from(:secs)
     end
   end
   defp parse(time) when is_binary(time) do
-    Timex.parse!(time, @date_format)
+    DateFormat.parse!(time, @date_format)
   end
 
   defp truncate(minutes, granularity) when is_integer(minutes) do
     minutes
-    |> from_minutes
-    |> DateTime.from_seconds
+    |> from_minutes()
+    |> Date.from(:secs)
     |> truncate(granularity)
   end
 
   defp truncate(time, @minute_prefix) do
     time
-    |> to_minutes
+    |> to_minutes()
   end
   defp truncate(time, @ten_minute_prefix) do
     time
-    |> to_minutes
+    |> to_minutes()
     |> div(@ten_minute_res)
     |> Kernel.*(@ten_minute_res)
   end
   defp truncate(time, @hour_prefix) do
     time
-    |> DateTime.set(minute: 0)
-    |> to_minutes
+    |> Date.set(minute: 0)
+    |> to_minutes()
   end
   defp truncate(time, @day_prefix) do
     time
-    |> DateTime.set(minute: 0, hour: 0)
-    |> to_minutes
+    |> Date.set(minute: 0, hour: 0)
+    |> to_minutes()
   end
   defp truncate(time, @week_prefix) do
     time
-    |> DateTime.set(minute: 0, hour: 0)
-    |> to_minutes
+    |> Date.set(minute: 0, hour: 0)
+    |> to_minutes()
     |> div(@week_res)
     |> Kernel.*(@week_res)
   end
   defp truncate(time, @month_prefix) do
     time
-    |> DateTime.set(minute: 0, hour: 0, day: 1)
-    |> to_minutes
+    |> Date.set(minute: 0, hour: 0, day: 1)
+    |> to_minutes()
   end
 
   defp to_minutes(date) do
     date
-    |> DateTime.to_seconds
+    |> Date.to_secs()
     |> Kernel.-(@epoch)
     |> div(@minute_conversion)
   end
@@ -215,21 +217,21 @@ defmodule Clox do
 
   defp pack(minutes) do
     minutes
-    |> :binary.encode_unsigned
-    |> Base.url_encode64
+    |> :binary.encode_unsigned()
+    |> Base.url_encode64()
     |> String.replace("=", "")
   end
 
   defp unpack(time) do
     time
-    |> pad
-    |> Base.url_decode64!
-    |> :binary.decode_unsigned
+    |> pad()
+    |> Base.url_decode64!()
+    |> :binary.decode_unsigned()
   end
 
   for size <- [0,1,2,3] do
     padding = if size != 0 do
-      Stream.cycle(["="]) |> Enum.take(4 - size) |> to_string
+      Stream.cycle(["="]) |> Enum.take(4 - size) |> to_string()
     else
       ""
     end
